@@ -41,3 +41,4 @@ npm run preview
 - Poster: "Proud Supporter of Sabon Salo" beside the photo, constituency line under it, and a "Vote for Continuity and Progress" band at the bottom
 - Poster: supporters can drag their photo on the poster, or use the left/right and up/down sliders, plus zoom
 - Fixes: older-browser `roundRect` crash, double file dialog on keyboard activation, share-button clipboard error, absolute asset paths, step indicators, leaked object URLs
+"# jjumaru-2027" 
