@@ -76,7 +76,7 @@ shareBtn.addEventListener('click', async () => {
   const blob = await engine.blob(); if (!blob) return;
   const file = new File([blob], 'jjumaru-poster.png', { type: 'image/png' });
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ title: 'Mp. Jeremiah Umaru poster', text: 'Mp. Jeremiah Umaru — Member, House of Representatives, Nasarawa North. Vote for Continuity and Progress.', files: [file] }); }
+    try { await navigator.share({ title: 'Mp. Jeremiah Umaru poster', text: 'Mp. Jeremiah Umaru — Member, House of Representatives, Akwanga/Nas Eggon/Wamba. Vote for Continuity and Progress.', files: [file] }); }
     catch (e) { if (e.name !== 'AbortError') toast('Sharing was not available.'); }
   } else {
     try { await navigator.clipboard.writeText(location.href); toast('Sharing is not supported here. Page link copied; use Download instead.'); }

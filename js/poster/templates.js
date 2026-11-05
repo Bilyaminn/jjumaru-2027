@@ -58,7 +58,7 @@ function candidateTitle(ctx) {
   ctx.fillStyle = C.white; ctx.font = `900 ${fit(ctx, name, 950, 70, 42, 900)}px Arial`; ctx.fillText(name, 58, 660);
   ctx.fillStyle = C.orange; ctx.fillRect(60, 682, 92, 8);
   ctx.fillStyle = C.white; ctx.font = '700 24px Arial'; ctx.fillText('ACA, ACTI, Ph.D.', 60, 730);
-  ctx.fillStyle = '#E5EEE8'; ctx.font = '600 19px Arial'; ctx.fillText('HOUSE OF REPRESENTATIVES  ·  NASARAWA NORTH', 60, 774);
+  ctx.fillStyle = '#E5EEE8'; ctx.font = '600 19px Arial'; ctx.fillText('HOUSE OF REPRESENTATIVES  ·  AKWANGA/NASARAWA EGGON/WAMBA', 60, 774);
 }
 function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
   const y = 850;
@@ -75,7 +75,7 @@ function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
   ctx.fillStyle = C.orange; ctx.font = `800 ${fit(ctx, label, 690, 28, 16)}px Arial`; ctx.fillText(label, tx, 970);
   const displayName = (name || 'Your Name').trim();
   ctx.fillStyle = primary; ctx.font = `800 ${fit(ctx, displayName, 690, 49, 25)}px Arial`; ctx.fillText(displayName, tx, 1040);
-  ctx.fillStyle = secondary; ctx.font = '600 20px Arial'; ctx.fillText('Nasarawa North  ·  SDP', tx, 1085);
+  ctx.fillStyle = secondary; ctx.font = '600 20px Arial'; ctx.fillText('Akwanga/Nasarawa Eggon/Wamba  ·  SDP', tx, 1085);
 
   ctx.strokeStyle = modern ? '#DCE6DE' : 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(60, 1190); ctx.lineTo(1020, 1190); ctx.stroke();
 
