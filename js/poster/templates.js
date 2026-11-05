@@ -60,7 +60,7 @@ function candidateTitle(ctx) {
   ctx.fillStyle = C.white; ctx.font = '700 24px Arial'; ctx.fillText('ACA, ACTI, Ph.D.', 60, 730);
   ctx.fillStyle = '#E5EEE8'; ctx.font = '600 19px Arial'; ctx.fillText('HOUSE OF REPRESENTATIVES  ·  AKWANGA/NASARAWA EGGON/WAMBA', 60, 774);
 }
-function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
+function supporterBlock(ctx, supporter, name, lga, zoom, pos, variant) {
   const y = 850;
   const modern = variant === 'modern';
   ctx.fillStyle = modern ? C.white : C.deep; ctx.fillRect(0, y, 1080, 500);
@@ -75,7 +75,8 @@ function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
   ctx.fillStyle = C.orange; ctx.font = `800 ${fit(ctx, label, 690, 28, 16)}px Arial`; ctx.fillText(label, tx, 970);
   const displayName = (name || 'Your Name').trim();
   ctx.fillStyle = primary; ctx.font = `800 ${fit(ctx, displayName, 690, 49, 25)}px Arial`; ctx.fillText(displayName, tx, 1040);
-  ctx.fillStyle = secondary; ctx.font = '600 20px Arial'; ctx.fillText('Akwanga/Nasarawa Eggon/Wamba  ·  SDP', tx, 1085);
+  const lgaRaw = (lga || '').trim(), lgaText = lgaRaw ? (/lga|local government/i.test(lgaRaw) ? lgaRaw : `${lgaRaw} LGA`) : 'Your LGA';
+  ctx.fillStyle = secondary; ctx.font = `600 ${fit(ctx, lgaText, 690, 24, 16, 600)}px Arial`; ctx.fillText(lgaText, tx, 1085);
 
   ctx.strokeStyle = modern ? '#DCE6DE' : 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(60, 1190); ctx.lineTo(1020, 1190); ctx.stroke();
 
@@ -91,7 +92,7 @@ function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cta, 540, 1306);
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
-export function renderPoster({ ctx, candidate, logoImg, supporter, name, zoom, position = DEFAULT_POSITION, template }) {
+export function renderPoster({ ctx, candidate, logoImg, supporter, name, lga, zoom, position = DEFAULT_POSITION, template }) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = C.deep; ctx.fillRect(0, 0, 1080, 1350);
@@ -100,10 +101,10 @@ export function renderPoster({ ctx, candidate, logoImg, supporter, name, zoom, p
     ctx.save(); ctx.beginPath(); roundRectPath(ctx, 24, 24, 1032, 806, 24); ctx.clip();
     drawCover(ctx, candidate, 24, 24, 1032, 806, 100);
     const g = ctx.createLinearGradient(0, 450, 0, 830); g.addColorStop(0, 'rgba(4,43,27,0)'); g.addColorStop(1, 'rgba(4,43,27,.96)'); ctx.fillStyle = g; ctx.fillRect(24, 430, 1032, 400); ctx.restore();
-    drawLogo(ctx, logoImg, 58, 58, 72); candidateTitle(ctx); supporterBlock(ctx, supporter, name, zoom, position, 'modern');
+    drawLogo(ctx, logoImg, 58, 58, 72); candidateTitle(ctx); supporterBlock(ctx, supporter, name, lga, zoom, position, 'modern');
   } else {
     drawCover(ctx, candidate, 0, 0, 1080, 850, 100);
     const g = ctx.createLinearGradient(0, 390, 0, 850); g.addColorStop(0, 'rgba(4,43,27,0)'); g.addColorStop(1, 'rgba(4,43,27,.98)'); ctx.fillStyle = g; ctx.fillRect(0, 390, 1080, 460);
-    drawLogo(ctx, logoImg, 58, 58, 76); candidateTitle(ctx); supporterBlock(ctx, supporter, name, zoom, position, 'classic');
+    drawLogo(ctx, logoImg, 58, 58, 76); candidateTitle(ctx); supporterBlock(ctx, supporter, name, lga, zoom, position, 'classic');
   }
 }

@@ -5,7 +5,7 @@ initNavigation();
 
 const $ = s => document.querySelector(s);
 const uploadZone = $('#uploadZone'), fileInput = $('#supporterUpload'), avatar = $('#uploadAvatar'), uploadTitle = $('#uploadTitle');
-const nameInput = $('#supporterName'), zoomInput = $('#zoomRange'), zoomValue = $('#zoomValue');
+const nameInput = $('#supporterName'), lgaInput = $('#supporterLga'), zoomInput = $('#zoomRange'), zoomValue = $('#zoomValue');
 const posX = $('#posX'), posY = $('#posY');
 const downloadBtn = $('#downloadBtn'), shareBtn = $('#shareBtn'), resetBtn = $('#resetBtn'), status = $('#previewStatus'), posterState = $('#posterState');
 const steps = [...document.querySelectorAll('.step')];
@@ -28,6 +28,7 @@ const engine = createPosterEngine({
 engine.ready().catch(() => { status.textContent = 'Unavailable'; posterState.textContent = 'Poster preview unavailable'; toast('The poster image could not be loaded. Please refresh the page.'); });
 
 nameInput.addEventListener('input', () => { engine.set({ name: nameInput.value.trim() }); updateSteps(); });
+lgaInput.addEventListener('input', () => engine.set({ lga: lgaInput.value.trim() }));
 zoomInput.addEventListener('input', () => { zoomValue.value = `${zoomInput.value}%`; engine.setZoom(Number(zoomInput.value)); });
 [posX, posY].forEach(input => input.addEventListener('input', () => engine.setPosition(Number(posX.value) / 100, Number(posY.value) / 100)));
 
@@ -86,7 +87,7 @@ shareBtn.addEventListener('click', async () => {
 
 resetBtn.addEventListener('click', () => {
   engine.reset();
-  nameInput.value = ''; zoomInput.value = '100'; zoomValue.value = '100%'; fileInput.value = '';
+  nameInput.value = ''; lgaInput.value = ''; zoomInput.value = '100'; zoomValue.value = '100%'; fileInput.value = '';
   if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
   avatar.innerHTML = '<span>+</span>'; uploadTitle.textContent = 'Upload a photo';
   document.querySelectorAll('.template-tab').forEach(t => { const active = t.dataset.template === 'classic'; t.classList.toggle('active', active); t.setAttribute('aria-selected', String(active)); });

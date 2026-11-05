@@ -7,7 +7,7 @@ export function createPosterEngine({ canvas, candidateSrc, logoSrc, onState, onP
   const candidate = new Image(), logoImg = new Image();
   let supporter = null, template = 'classic', zoom = 100, renderQueued = false;
   let pos = { ...DEFAULT_POSITION };
-  const state = { name: '' };
+  const state = { name: '', lga: '' };
 
   candidate.decoding = 'async'; logoImg.decoding = 'async';
   const candidateReady = new Promise((resolve, reject) => {
@@ -25,11 +25,11 @@ export function createPosterEngine({ canvas, candidateSrc, logoSrc, onState, onP
   function queue() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; draw(); }); }
   function draw() {
     if (!candidate.complete || !candidate.naturalWidth) return;
-    renderPoster({ ctx, candidate, logoImg, supporter, name: state.name, zoom, position: pos, template });
+    renderPoster({ ctx, candidate, logoImg, supporter, name: state.name, lga: state.lga, zoom, position: pos, template });
     onState?.({ template, hasSupporter: Boolean(supporter), name: state.name });
   }
   async function ready() { await candidateReady; if (document.fonts?.ready) await document.fonts.ready; queue(); }
-  function reset() { supporter = null; template = 'classic'; zoom = 100; pos = { ...DEFAULT_POSITION }; state.name = ''; onPosition?.({ ...pos }); queue(); }
+  function reset() { supporter = null; template = 'classic'; zoom = 100; pos = { ...DEFAULT_POSITION }; state.name = ''; state.lga = ''; onPosition?.({ ...pos }); queue(); }
   function blob() { return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1)); }
 
   // Drag the supporter photo on the poster to reposition it.
