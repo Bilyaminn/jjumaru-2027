@@ -1,7 +1,7 @@
 /* ================= CAMPAIGN IMAGERY ================= */
 const posterPhotoSrc = "assets/images/img_9783.jpg";
-const heroPhotoSrc = "assets/images/faisal-shuaib-hero.jpg";
-const apcLogoSrc = "assets/images/apc-logo.jpeg";
+const heroPhotoSrc = "assets/images/jjumaru-hero.jpg";
+const apcLogoSrc = "assets/images/sdp-logo.png";
 
 const heroPhoto = document.getElementById('heroPhoto');
 heroPhoto.src = heroPhotoSrc;
@@ -192,14 +192,14 @@ function drawPoster() {
   ctx.fillStyle = '#D9BE83';
   ctx.font = '700 18px Arial';
   ctx.textAlign = 'left';
-  ctx.fillText('APC · 2027', 142, 73);
+  ctx.fillText('SDP · 2027', 142, 73);
 
   ctx.fillStyle = '#FBF9F2';
   ctx.font = '400 56px Georgia';
-  ctx.fillText('Dr. Faisal Shuaib', 56, splitY - 96);
+  ctx.fillText('Mp. Jeremiah Umaru ACA, ACTI, Ph.D.', 56, splitY - 96);
   ctx.font = '600 22px Arial';
   ctx.fillStyle = '#C7D2DE';
-  ctx.fillText('Candidate for Senate — Nasarawa West', 56, splitY - 58);
+  ctx.fillText('Member, House of Representatives — Nasarawa North', 56, splitY - 58);
 
   /* Supporter section */
   ctx.fillStyle = '#0C1D34';
@@ -242,7 +242,7 @@ function drawPoster() {
   ctx.fillText(nameVal, suptCX + suptR + 32, suptCY + 18);
   ctx.fillStyle = '#93A0AF';
   ctx.font = '400 18px Arial';
-  ctx.fillText('Nasarawa West · APC Supporter', suptCX + suptR + 32, suptCY + 46);
+  ctx.fillText('Nasarawa North · SDP Supporter', suptCX + suptR + 32, suptCY + 46);
 
   const barY = splitY + 210;
   ctx.strokeStyle = 'rgba(251,249,242,.16)';
@@ -252,13 +252,13 @@ function drawPoster() {
   ctx.lineTo(W - 56, barY);
   ctx.stroke();
 
-  const sloganVal = document.getElementById('slogan').value.trim() || 'I stand with Faisal Shuaib';
+  const sloganVal = document.getElementById('slogan').value.trim() || 'I Support Sabon Salo For Continuity';
   ctx.fillStyle = accentColor;
   ctx.font = '400 40px Georgia';
   ctx.textAlign = 'center';
   wrapCenteredText(ctx, sloganVal, W / 2, barY + 66, W - 160, 46);
 
-  const hashVal = document.getElementById('hashtag').value.trim() || '#FaisalForNasarawaWest';
+  const hashVal = document.getElementById('hashtag').value.trim() || '#JJUmaruForNasarawaNorth';
   ctx.font = '600 20px Arial';
   ctx.fillStyle = '#93A0AF';
   ctx.fillText(hashVal, W / 2, H - 44);
@@ -297,7 +297,7 @@ downloadBtn.addEventListener('click', () => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `faisal-shuaib-poster-${nameVal || 'supporter'}.png`;
+    link.download = `jjumaru-poster-${nameVal || 'supporter'}.png`;
     link.href = url;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);

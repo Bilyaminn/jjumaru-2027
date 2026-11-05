@@ -1,280 +1,109 @@
 export const TEMPLATES = {
-  classic: { label: 'Classic' },
-  modern: { label: 'Modern' }
+  classic: { label: 'Signature' },
+  modern: { label: 'Editorial' }
 };
 
-const COLORS = {
-  navy: '#071827',
-  navy2: '#0b2235',
-  cream: '#f4f0e7',
-  white: '#fbfcfa',
-  muted: '#aab7c0',
-  gold: '#d8b568',
-  green: '#0b6e3c'
-};
+const C = { green: '#075B35', deep: '#063D27', orange: '#F47B20', white: '#FFFFFF', pale: '#EAF2EC', ink: '#123326', muted: '#B9D0C1' };
 
-export function drawCover(ctx, img, x, y, w, h, zoom = 100) {
-  const z = Math.max(1, zoom / 100);
-  const ir = img.width / img.height;
-  const br = w / h;
+// The supporter photo circle. Shared with the engine so dragging can hit-test it.
+export const PHOTO_CIRCLE = { cx: 170, cy: 1040, r: 112 };
+export const DEFAULT_POSITION = { x: 0.5, y: 0.3 };
+
+export function coverMetrics(img, w, h, zoom = 100) {
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  const z = Math.max(1, zoom / 100), ir = iw / ih, br = w / h;
   let sw, sh;
-
-  if (ir > br) {
-    sh = img.height;
-    sw = sh * br;
-  } else {
-    sw = img.width;
-    sh = sw / br;
-  }
-
-  sw = Math.min(img.width, sw / z);
-  sh = Math.min(img.height, sh / z);
-  const sx = Math.max(0, (img.width - sw) / 2);
-  const sy = Math.max(0, (img.height - sh) / 2);
-  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  if (ir > br) { sh = ih; sw = sh * br; } else { sw = iw; sh = sw / br; }
+  sw = Math.min(iw, sw / z); sh = Math.min(ih, sh / z);
+  return { sw, sh, slackX: iw - sw, slackY: ih - sh };
 }
 
-function fitText(ctx, text, maxWidth, maxSize, minSize = 16, font = 'Manrope') {
+// px / py (0..1) choose which part of the image stays visible once it is cropped or zoomed.
+export function drawCover(ctx, img, x, y, w, h, zoom = 100, px = 0.5, py = 0.5) {
+  const m = coverMetrics(img, w, h, zoom);
+  const clamp = v => Math.min(1, Math.max(0, v));
+  ctx.drawImage(img, m.slackX * clamp(px), m.slackY * clamp(py), m.sw, m.sh, x, y, w, h);
+}
+
+// ctx.roundRect is missing from older browsers; fall back to arcs so the poster still renders.
+function roundRectPath(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+  r = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function fit(ctx, value, maxWidth, maxSize, minSize = 20, weight = 800, family = 'Arial') {
   let size = maxSize;
-  while (size > minSize) {
-    ctx.font = `800 ${size}px ${font}`;
-    if (ctx.measureText(text).width <= maxWidth) break;
-    size -= 1;
-  }
+  do { ctx.font = `${weight} ${size}px ${family}`; if (ctx.measureText(value).width <= maxWidth) break; size--; } while (size > minSize);
   return size;
 }
-
-function wrap(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
-  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return 0;
-
-  const lines = [];
-  let line = '';
-
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width <= maxWidth || !line) {
-      line = test;
-    } else {
-      lines.push(line);
-      line = word;
-    }
-  }
-  if (line) lines.push(line);
-
-  const visible = lines.slice(0, maxLines);
-  if (lines.length > maxLines) {
-    let last = visible[maxLines - 1];
-    while (ctx.measureText(`${last}…`).width > maxWidth && last.length > 1) last = last.slice(0, -1);
-    visible[maxLines - 1] = `${last.trim()}…`;
-  }
-
-  visible.forEach((lineText, i) => ctx.fillText(lineText, x, y + i * lineHeight));
-  return visible.length;
-}
-
-function roundedImage(ctx, img, cx, cy, r, zoom) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.clip();
-  drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2, zoom);
+function roundedPhoto(ctx, img, cx, cy, r, zoom, pos) {
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  if (img) drawCover(ctx, img, cx - r, cy - r, r * 2, r * 2, zoom, pos.x, pos.y);
+  else { ctx.fillStyle = '#DDE9DF'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.fillStyle = C.green; ctx.textAlign = 'center'; ctx.font = '700 22px Arial'; ctx.fillText('YOUR', cx, cy - 4); ctx.fillText('PHOTO', cx, cy + 25); }
   ctx.restore();
 }
-
-function logo(ctx, logoImg, x, y, size, radius = 14) {
-  if (!logoImg?.complete || !logoImg.naturalWidth) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(x, y, size, size, radius);
-  ctx.clip();
-  ctx.drawImage(logoImg, x, y, size, size);
-  ctx.restore();
+function drawLogo(ctx, img, x, y, size) {
+  if (!img?.complete || !img.naturalWidth) return;
+  const w = size * img.naturalWidth / img.naturalHeight;
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.16)'; ctx.shadowBlur = 18; ctx.fillStyle = '#fff'; ctx.beginPath(); roundRectPath(ctx, x - 10, y - 10, w + 20, size + 20, 14); ctx.fill(); ctx.drawImage(img, x, y, w, size); ctx.restore();
 }
+function candidateTitle(ctx) {
+  const name = 'MP. JEREMIAH UMARU';
+  ctx.fillStyle = C.white; ctx.font = `900 ${fit(ctx, name, 950, 70, 42, 900)}px Arial`; ctx.fillText(name, 58, 660);
+  ctx.fillStyle = C.orange; ctx.fillRect(60, 682, 92, 8);
+  ctx.fillStyle = C.white; ctx.font = '700 24px Arial'; ctx.fillText('ACA, ACTI, Ph.D.', 60, 730);
+  ctx.fillStyle = '#E5EEE8'; ctx.font = '600 19px Arial'; ctx.fillText('HOUSE OF REPRESENTATIVES  ·  NASARAWA NORTH', 60, 774);
+}
+function supporterBlock(ctx, supporter, name, zoom, pos, variant) {
+  const y = 850;
+  const modern = variant === 'modern';
+  ctx.fillStyle = modern ? C.white : C.deep; ctx.fillRect(0, y, 1080, 500);
+  if (modern) { ctx.fillStyle = C.orange; ctx.fillRect(0, y, 18, 500); }
+  const { cx, cy, r } = PHOTO_CIRCLE;
+  ctx.beginPath(); ctx.arc(cx, cy, r + 10, 0, Math.PI * 2); ctx.fillStyle = C.orange; ctx.fill();
+  roundedPhoto(ctx, supporter, cx, cy, r, zoom, pos);
 
-function photoPlaceholder(ctx, cx, cy, r) {
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fillStyle = '#17324a';
-  ctx.fill();
-  ctx.fillStyle = COLORS.gold;
-  ctx.textAlign = 'center';
-  ctx.font = '800 23px Manrope';
-  ctx.fillText('YOUR', cx, cy - 4);
-  ctx.fillText('PHOTO', cx, cy + 27);
+  const tx = 330, primary = modern ? C.ink : C.white, secondary = modern ? '#64766B' : C.muted;
   ctx.textAlign = 'left';
+  const label = 'PROUD SUPPORTER OF SABON SALO';
+  ctx.fillStyle = C.orange; ctx.font = `800 ${fit(ctx, label, 690, 28, 16)}px Arial`; ctx.fillText(label, tx, 970);
+  const displayName = (name || 'Your Name').trim();
+  ctx.fillStyle = primary; ctx.font = `800 ${fit(ctx, displayName, 690, 49, 25)}px Arial`; ctx.fillText(displayName, tx, 1040);
+  ctx.fillStyle = secondary; ctx.font = '600 20px Arial'; ctx.fillText('Nasarawa North  ·  SDP', tx, 1085);
+
+  ctx.strokeStyle = modern ? '#DCE6DE' : 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(60, 1190); ctx.lineTo(1020, 1190); ctx.stroke();
+
+  // Footer line under the photo.
+  const area = 'AKWANGA/NASARAWA EGGON/WAMBA CONSTITUENCY';
+  ctx.fillStyle = modern ? C.green : C.white; ctx.font = `800 ${fit(ctx, area, 640, 20, 14)}px Arial`; ctx.fillText(area, 60, 1238);
+  ctx.textAlign = 'right'; ctx.fillStyle = modern ? '#64766B' : C.muted; ctx.font = '700 17px Arial'; ctx.fillText('2027', 1020, 1238); ctx.textAlign = 'left';
+
+  // Call-to-action band.
+  ctx.fillStyle = C.orange; ctx.fillRect(0, 1262, 1080, 88);
+  const cta = 'VOTE FOR CONTINUITY AND PROGRESS';
+  ctx.fillStyle = C.deep; ctx.font = `900 ${fit(ctx, cta, 960, 40, 22, 900)}px Arial`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cta, 540, 1306);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
-
-export function renderPoster({ ctx, candidate, logoImg, supporter, name, message, hashtag, zoom, template }) {
-  const W = 1080;
-  const H = 1350;
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = COLORS.navy;
-  ctx.fillRect(0, 0, W, H);
-
+export function renderPoster({ ctx, candidate, logoImg, supporter, name, zoom, position = DEFAULT_POSITION, template }) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = C.deep; ctx.fillRect(0, 0, 1080, 1350);
   if (template === 'modern') {
-    return modern(ctx, { candidate, logoImg, supporter, name, message, hashtag, zoom });
+    ctx.fillStyle = '#F2F5F0'; ctx.fillRect(0, 0, 1080, 1350);
+    ctx.save(); ctx.beginPath(); roundRectPath(ctx, 24, 24, 1032, 806, 24); ctx.clip();
+    drawCover(ctx, candidate, 24, 24, 1032, 806, 100);
+    const g = ctx.createLinearGradient(0, 450, 0, 830); g.addColorStop(0, 'rgba(4,43,27,0)'); g.addColorStop(1, 'rgba(4,43,27,.96)'); ctx.fillStyle = g; ctx.fillRect(24, 430, 1032, 400); ctx.restore();
+    drawLogo(ctx, logoImg, 58, 58, 72); candidateTitle(ctx); supporterBlock(ctx, supporter, name, zoom, position, 'modern');
+  } else {
+    drawCover(ctx, candidate, 0, 0, 1080, 850, 100);
+    const g = ctx.createLinearGradient(0, 390, 0, 850); g.addColorStop(0, 'rgba(4,43,27,0)'); g.addColorStop(1, 'rgba(4,43,27,.98)'); ctx.fillStyle = g; ctx.fillRect(0, 390, 1080, 460);
+    drawLogo(ctx, logoImg, 58, 58, 76); candidateTitle(ctx); supporterBlock(ctx, supporter, name, zoom, position, 'classic');
   }
-  return classic(ctx, { candidate, logoImg, supporter, name, message, hashtag, zoom });
-}
-
-function classic(ctx, p) {
-  const { candidate, logoImg, supporter, name, message, hashtag, zoom } = p;
-  const W = 1080;
-  const H = 1350;
-  const split = 760;
-  const campaignMessage = message?.trim() || 'I stand with Dr. Faisal Shuaib';
-
-  ctx.save();
-  ctx.rect(0, 0, W, split);
-  ctx.clip();
-  drawCover(ctx, candidate, 0, 0, W, split, 100);
-  const g = ctx.createLinearGradient(0, 400, 0, split);
-  g.addColorStop(0, 'rgba(7,24,39,0)');
-  g.addColorStop(1, 'rgba(7,24,39,.97)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 360, W, 400);
-  ctx.restore();
-
-  logo(ctx, logoImg, 50, 44, 76);
-  ctx.fillStyle = COLORS.gold;
-  ctx.font = '800 18px Manrope';
-  ctx.fillText('APC · 2027', 145, 76);
-
-  ctx.fillStyle = COLORS.white;
-  ctx.font = '400 58px "DM Serif Display"';
-  ctx.fillText('Dr. Faisal Shuaib', 55, 670);
-  ctx.fillStyle = '#c4d0da';
-  ctx.font = '600 22px Manrope';
-  ctx.fillText('FOR SENATE — NASARAWA WEST · 2027', 55, 713);
-
-  ctx.fillStyle = COLORS.navy2;
-  ctx.fillRect(0, split, W, H - split);
-
-  const r = 90;
-  const cx = 150;
-  const cy = 850;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.green;
-  ctx.fill();
-  if (supporter) roundedImage(ctx, supporter, cx, cy, r, zoom);
-  else photoPlaceholder(ctx, cx, cy, r);
-
-  ctx.fillStyle = '#91a1ad';
-  ctx.font = '800 16px Manrope';
-  ctx.fillText('SUPPORTED BY', 275, 824);
-  ctx.fillStyle = COLORS.white;
-  ctx.font = '400 35px "DM Serif Display"';
-  wrap(ctx, name || 'Your Name', 275, 866, 680, 42, 2);
-  ctx.fillStyle = '#91a1ad';
-  ctx.font = '500 17px Manrope';
-  ctx.fillText('Nasarawa West · APC Supporter', 275, 923);
-
-  ctx.strokeStyle = 'rgba(255,255,255,.14)';
-  ctx.beginPath();
-  ctx.moveTo(55, 972);
-  ctx.lineTo(1025, 972);
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = COLORS.gold;
-  ctx.font = '400 39px "DM Serif Display"';
-  wrap(ctx, campaignMessage, 540, 1045, 880, 46, 2);
-  ctx.fillStyle = '#91a1ad';
-  ctx.font = '700 18px Manrope';
-  ctx.fillText(hashtag || '#FaisalForNasarawaWest', 540, 1295);
-  ctx.textAlign = 'left';
-}
-
-function modern(ctx, p) {
-  const { candidate, logoImg, supporter, name, message, hashtag, zoom } = p;
-  const W = 1080;
-  const H = 1350;
-  const campaignMessage = message?.trim() || 'I stand with Dr. Faisal Shuaib';
-
-  // Warm editorial background.
-  ctx.fillStyle = COLORS.cream;
-  ctx.fillRect(0, 0, W, H);
-
-  // Candidate image: clean, dominant upper panel.
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(36, 36, W - 72, 650, 30);
-  ctx.clip();
-  drawCover(ctx, candidate, 36, 36, W - 72, 650, 100);
-  const overlay = ctx.createLinearGradient(0, 390, 0, 686);
-  overlay.addColorStop(0, 'rgba(7,24,39,0)');
-  overlay.addColorStop(1, 'rgba(7,24,39,.94)');
-  ctx.fillStyle = overlay;
-  ctx.fillRect(36, 350, W - 72, 336);
-  ctx.restore();
-
-  logo(ctx, logoImg, 68, 68, 72);
-  ctx.fillStyle = COLORS.white;
-  ctx.font = '800 18px Manrope';
-  ctx.fillText('APC · 2027', 155, 100);
-
-  ctx.fillStyle = COLORS.white;
-  const candidateSize = fitText(ctx, 'DR. FAISAL SHUAIB', 880, 76, 48);
-  ctx.font = `800 ${candidateSize}px Manrope`;
-  ctx.fillText('DR. FAISAL SHUAIB', 68, 588);
-  ctx.fillStyle = COLORS.gold;
-  ctx.font = '800 18px Manrope';
-  ctx.fillText('FOR SENATE — NASARAWA WEST · 2027', 68, 625);
-
-  // Lower section is deliberately split into three clear zones:
-  // supporter identity, campaign statement, and footer metadata.
-  ctx.fillStyle = COLORS.navy;
-  ctx.beginPath();
-  ctx.roundRect(36, 720, W - 72, 594, 30);
-  ctx.fill();
-
-  // Supporter photo.
-  const cx = 190;
-  const cy = 885;
-  const r = 118;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r + 9, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.gold;
-  ctx.fill();
-  if (supporter) roundedImage(ctx, supporter, cx, cy, r, zoom);
-  else photoPlaceholder(ctx, cx, cy, r);
-
-  // Supporter details.
-  const textX = 355;
-  ctx.fillStyle = COLORS.gold;
-  ctx.font = '800 14px Manrope';
-  ctx.fillText('SUPPORTED BY', textX, 800);
-
-  ctx.fillStyle = COLORS.white;
-  ctx.font = `400 ${fitText(ctx, name || 'Your Name', 630, 46, 25, 'DM Serif Display')}px "DM Serif Display"`;
-  wrap(ctx, name || 'Your Name', textX, 858, 630, 50, 2);
-
-  ctx.fillStyle = COLORS.muted;
-  ctx.font = '600 16px Manrope';
-  ctx.fillText('Nasarawa West · APC Supporter', textX, 925);
-
-  // The requested campaign statement is always prominent and never hidden.
-  ctx.strokeStyle = 'rgba(255,255,255,.13)';
-  ctx.beginPath();
-  ctx.moveTo(72, 982);
-  ctx.lineTo(1008, 982);
-  ctx.stroke();
-
-  ctx.fillStyle = COLORS.gold;
-  ctx.font = '800 12px Manrope';
-  ctx.fillText('CAMPAIGN MESSAGE', 72, 1022);
-
-  ctx.fillStyle = COLORS.white;
-  ctx.font = `400 ${fitText(ctx, campaignMessage, 900, 42, 24, 'DM Serif Display')}px "DM Serif Display"`;
-  wrap(ctx, campaignMessage, 72, 1070, 900, 48, 2);
-
-  // Bottom metadata keeps the poster balanced and readable.
-  ctx.fillStyle = '#81929d';
-  ctx.font = '700 16px Manrope';
-  ctx.fillText(hashtag || '#FaisalForNasarawaWest', 72, 1268);
-  ctx.textAlign = 'right';
-  ctx.fillText('NASARAWA WEST · 2027', 1008, 1268);
-  ctx.textAlign = 'left';
 }
